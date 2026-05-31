@@ -27,8 +27,8 @@ PropConnect is a full-stack web application designed with a modular, scalable ar
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    Application Layer                        │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │         Node.js / Express.js Backend Server          │  │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              Node.js / NestJS Backend Server           │  │
 │  │                                                      │  │
 │  │  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │  │
 │  │  │ Auth Module │  │ User Module │  │ Properties │  │  │
@@ -70,6 +70,7 @@ PropConnect is a full-stack web application designed with a modular, scalable ar
 **Responsibility**: Handle user authentication, authorization, and session management.
 
 **Components**:
+
 - `auth.controller.ts` - HTTP request handlers
 - `auth.service.ts` - Business logic
 - `auth.guard.ts` - Route protection middleware
@@ -77,6 +78,7 @@ PropConnect is a full-stack web application designed with a modular, scalable ar
 - `oauth.strategy.ts` - OAuth2 integration
 
 **Key Features**:
+
 - JWT token generation and validation
 - Refresh token rotation
 - Two-factor authentication (2FA)
@@ -84,6 +86,7 @@ PropConnect is a full-stack web application designed with a modular, scalable ar
 - Session management with Redis
 
 **Flow**:
+
 ```
 User Registration/Login
     ↓
@@ -105,6 +108,7 @@ Subsequent requests include JWT in Authorization header
 **Responsibility**: User profile management, KYC documentation, and user role administration.
 
 **Components**:
+
 - `user.controller.ts` - User CRUD operations
 - `user.service.ts` - User business logic
 - `user.entity.ts` - Database schema
@@ -112,12 +116,14 @@ Subsequent requests include JWT in Authorization header
 - `document-upload.service.ts` - Document handling
 
 **User Roles**:
+
 - **Seller** - Property owner listing properties
 - **Buyer** - Property seeker/purchaser
 - **Broker** - Intermediary who verifies documents and parties
 - **Admin** - Platform administrator
 
 **KYC Process**:
+
 ```
 User uploads identity document
     ↓
@@ -139,6 +145,7 @@ User notified of KYC status
 **Responsibility**: Property listing management, media handling, and property data.
 
 **Components**:
+
 - `property.controller.ts` - Property CRUD operations
 - `property.service.ts` - Property business logic
 - `property.entity.ts` - Database schema
@@ -146,6 +153,7 @@ User notified of KYC status
 - `geolocation.service.ts` - Map integration
 
 **Property Lifecycle States**:
+
 ```
 Draft → Pending Verification → Published → Archived
         ↑_________________________↓
@@ -153,6 +161,7 @@ Draft → Pending Verification → Published → Archived
 ```
 
 **Data Fields**:
+
 - Basic info: address, rooms, bathrooms, area, price
 - Technical docs: cadastral maps, APE, floor plans
 - Media: photos, virtual tours, videos
@@ -164,12 +173,14 @@ Draft → Pending Verification → Published → Archived
 **Responsibility**: Document verification workflow, broker task management.
 
 **Components**:
+
 - `verification.controller.ts` - Broker operations
 - `verification.service.ts` - Verification logic
 - `verification-queue.service.ts` - Priority queue management
 - `verification-checklist.service.ts` - Checklist validation
 
 **Verification Workflow**:
+
 ```
 Seller/Buyer uploads documents
     ↓
@@ -187,6 +198,7 @@ Upon completion: unlock buyer-seller communication
 ```
 
 **Verification States**:
+
 - `pending` - Awaiting broker review
 - `in_review` - Broker actively reviewing
 - `approved` - All documents verified
@@ -198,12 +210,14 @@ Upon completion: unlock buyer-seller communication
 **Responsibility**: Real-time certified communication between buyers and sellers.
 
 **Components**:
+
 - `message.controller.ts` - Message CRUD
 - `message.service.ts` - Message logic
 - `websocket.gateway.ts` - Real-time WebSocket handler
 - `notification.service.ts` - Push notifications
 
 **Key Features**:
+
 - Real-time messaging via WebSocket
 - Immutable message history
 - Document sharing in messages
@@ -211,6 +225,7 @@ Upon completion: unlock buyer-seller communication
 - Message encryption in transit
 
 **Message Types**:
+
 - Text messages
 - Document shares
 - System notifications
@@ -221,18 +236,21 @@ Upon completion: unlock buyer-seller communication
 **Responsibility**: Market data analytics, pricing, and property comparables.
 
 **Components**:
+
 - `market-data.service.ts` - Data aggregation
 - `valuation.service.ts` - Property valuation algorithm
 - `analytics.controller.ts` - Analytics endpoints
 - `price-index.service.ts` - Price trend calculation
 
 **Data Sources**:
+
 - Internal transaction history
 - OMI (Agenzia delle Entrate) API
 - Immobiliare.it API
 - idealista API
 
 **Calculations**:
+
 - Average price per m² by zone
 - Price trends (6/12/24 months)
 - Market liquidity index
@@ -296,6 +314,7 @@ src/
 ### State Management
 
 **Redux Store Structure**:
+
 ```
 store/
 ├── auth
@@ -326,6 +345,7 @@ store/
 ### Key Tables
 
 **users**
+
 ```sql
 - id (UUID primary key)
 - email (unique)
@@ -337,6 +357,7 @@ store/
 ```
 
 **properties**
+
 ```sql
 - id (UUID primary key)
 - seller_id (FK to users)
@@ -350,6 +371,7 @@ store/
 ```
 
 **documents**
+
 ```sql
 - id (UUID primary key)
 - user_id or property_id (FK)
@@ -361,6 +383,7 @@ store/
 ```
 
 **messages**
+
 ```sql
 - id (UUID primary key)
 - sender_id (FK to users)
@@ -372,6 +395,7 @@ store/
 ```
 
 **verifications**
+
 ```sql
 - id (UUID primary key)
 - user_id or property_id (FK)
@@ -532,18 +556,33 @@ Deploy to Production
 
 ## Technology Decision Rationale
 
-| Component | Choice | Rationale |
-|-----------|--------|-----------|
-| Language | TypeScript | Type safety, better developer experience, fewer runtime errors |
-| Backend Framework | Express.js + NestJS | NestJS for structure, Express for flexibility |
-| Frontend | React | Large ecosystem, component-based, excellent DevTools |
-| Database | PostgreSQL | ACID compliance, JSON support, robust |
-| Cache | Redis | Fast in-memory store, session management |
-| Storage | AWS S3 | Scalable, secure, cost-effective |
-| Auth | JWT | Stateless, scalable, standard |
-| Real-time | WebSocket | Native browser support, low latency |
+| Component         | Choice         | Rationale                                                                        |
+| ----------------- | -------------- | -------------------------------------------------------------------------------- |
+| Language          | TypeScript     | Type safety, shared types between frontend and backend, fewer runtime errors     |
+| Backend Framework | NestJS         | Spring Boot-inspired: DI, decorators, modules, guards — enterprise patterns without Java verbosity |
+| Frontend          | React          | Large ecosystem, component-based, excellent DevTools                             |
+| Database          | PostgreSQL     | ACID compliance, JSON support, robust                                            |
+| Cache             | Redis          | Fast in-memory store, session management                                         |
+| Storage           | AWS S3         | Scalable, secure, cost-effective                                                 |
+| Auth              | JWT            | Stateless, scalable, standard                                                    |
+| Real-time         | WebSocket      | Native browser support, low latency                                              |
+
+### Why NestJS over Java/Spring Boot
+
+This choice was evaluated deliberately. PropConnect's backend workload is almost entirely **I/O-bound**: PostgreSQL queries, Redis reads/writes, S3 document uploads, external API calls (OMI, Immobiliare.it), and WebSocket message routing. Node.js's non-blocking event loop is purpose-built for exactly this profile — Java's thread-per-request model offers no advantage here and carries significant overhead.
+
+Beyond raw performance, NestJS provides the same enterprise architectural patterns as Spring Boot (dependency injection, module system, guards, interceptors, exception filters, pipes) with far less boilerplate. The biggest additional win is a **unified TypeScript codebase**: DTOs, validation schemas, and domain types defined once in the backend are directly reusable by the frontend, eliminating an entire class of contract drift bugs.
+
+**When Java/Spring Boot would be the right call instead:**
+- The core workload shifts to CPU-intensive computation (complex financial modeling, ML inference) that cannot be offloaded
+- The team is primarily Java-experienced with no TypeScript background
+- The platform needs to sustain tens of thousands of concurrent persistent WebSocket connections per node
+
+None of those conditions apply to PropConnect at its current stage or foreseeable Italian market scale. The analytics and valuation computations in the Marketplace module (the one CPU-heavier area) run as background jobs and can be handed off to a dedicated worker process or a lightweight Python service if they become a bottleneck — without requiring a full backend rewrite.
+
+**Note on Express**: NestJS uses Express as its HTTP adapter under the hood. There is no need to reference Express directly in the architecture — NestJS is the framework and Express is an implementation detail it abstracts away.
 
 ---
 
-**Last Updated**: May 2026  
-**Version**: 1.0
+**Last Updated**: June 2026  
+**Version**: 1.1
