@@ -1,1 +1,92 @@
-import { NestFactory } from '@nestjs/core';\nimport { ValidationPipe, BadRequestException } from '@nestjs/common';\nimport { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';\nimport * as helmet from 'helmet';\nimport * as compression from 'compression';\nimport { AppModule } from './app.module';\nimport { HttpExceptionFilter } from './shared/filters/http-exception.filter';\nimport { LoggerService } from './shared/services/logger.service';\n\nasync function bootstrap(): Promise<void> {\n  const app = await NestFactory.create(AppModule, {\n    logger: new LoggerService(),\n  });\n\n  const logger = app.get(LoggerService);\n\n  // Security middleware\n  app.use(helmet());\n  app.use(compression());\n\n  // Enable CORS\n  app.enableCors({\n    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',\n    credentials: true,\n    allowedHeaders: ['Content-Type', 'Authorization'],\n    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],\n  });\n\n  // Global pipes\n  app.useGlobalPipes(\n    new ValidationPipe({\n      whitelist: true,\n      forbidNonWhitelisted: true,\n      transform: true,\n      transformOptions: {\n        enableImplicitConversion: true,\n      },\n      exceptionFactory: (errors) => {\n        const messages = errors.map(\n          (err) =>\n            `${err.property}: ${Object.values(err.constraints || {}).join(', ')}`,\n        );\n        return new BadRequestException({\n          statusCode: 400,\n          message: 'Validation failed',\n          errors: messages,\n        });\n      },\n    }),\n  );\n\n  // Global exception filter\n  app.useGlobalFilters(new HttpExceptionFilter());\n\n  // Swagger Documentation\n  if (process.env.API_DOCS_ENABLED !== 'false') {\n    const config = new DocumentBuilder()\n      .setTitle('PropConnect API')\n      .setDescription('PropConnect Digital Real Estate Platform API')\n      .setVersion('1.0.0')\n      .addBearerAuth(\n        { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },\n        'JWT',\n      )\n      .addTag('Authentication', 'User authentication and authorization')\n      .addTag('Users', 'User management and profiles')\n      .addTag('Properties', 'Property listings and management')\n      .addTag('Verification', 'Document verification workflow')\n      .addTag('Messages', 'Messaging and communications')\n      .addTag('Marketplace', 'Market data and analytics')\n      .build();\n\n    const document = SwaggerModule.createDocument(app, config);\n    SwaggerModule.setup('docs', app, document, {\n      swaggerOptions: {\n        persistAuthorization: true,\n      },\n    });\n  }\n\n  const port = process.env.PORT || 3000;\n  await app.listen(port);\n\n  logger.log(\n    `🚀 PropConnect Backend running on port ${port}`,\n    'Bootstrap',\n  );\n  logger.log(\n    `📚 API Documentation available at http://localhost:${port}/docs`,\n    'Bootstrap',\n  );\n}\n\nbootstrap().catch((err) => {\n  console.error('Failed to bootstrap application:', err);\n  process.exit(1);\n});\n
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe, BadRequestException } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import helmet from 'helmet';
+import compression from 'compression';
+import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
+import { LoggerService } from './shared/services/logger.service';
+
+async function bootstrap(): Promise<void> {
+  const logger = new LoggerService();
+
+  const app = await NestFactory.create(AppModule, { logger });
+
+  // Security middleware
+  app.use(helmet());
+  app.use(compression());
+
+  // CORS
+  app.enableCors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  });
+
+  // Global validation
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+      exceptionFactory: (errors) => {
+        const messages = errors.map(
+          (err) =>
+            `${err.property}: ${Object.values(err.constraints ?? {}).join(', ')}`,
+        );
+        return new BadRequestException({
+          statusCode: 400,
+          message: 'Validation failed',
+          errors: messages,
+        });
+      },
+    }),
+  );
+
+  // Global exception filter
+  app.useGlobalFilters(new HttpExceptionFilter());
+
+  // API prefix
+  app.setGlobalPrefix('api');
+
+  // Swagger — disabled in production via env
+  if (process.env.API_DOCS_ENABLED !== 'false') {
+    const config = new DocumentBuilder()
+      .setTitle('PropConnect API')
+      .setDescription(
+        'PropConnect — Digital Real Estate Platform API\n\nBase URL: `https://api.propconnect.it/api`',
+      )
+      .setVersion('1.0.0')
+      .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'JWT')
+      .addTag('Authentication', 'User registration, login and token management')
+      .addTag('Users', 'User profiles and KYC document upload')
+      .addTag('Properties', 'Property listing creation, search and management')
+      .addTag('Verification', 'Broker document verification workflow')
+      .addTag('Messages', 'Real-time certified messaging between buyers and sellers')
+      .addTag('Marketplace', 'Market data analytics, comparables and property valuation')
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document, {
+      swaggerOptions: { persistAuthorization: true },
+    });
+  }
+
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+
+  logger.log(`PropConnect API running on port ${port}`, 'Bootstrap');
+  logger.log(
+    `Swagger docs at http://localhost:${port}/docs`,
+    'Bootstrap',
+  );
+}
+
+bootstrap().catch((err) => {
+  console.error('Failed to start application:', err);
+  process.exit(1);
+});

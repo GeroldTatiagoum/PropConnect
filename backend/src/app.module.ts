@@ -27,12 +27,10 @@ import { getValidationSchema } from './config/validation.config';
       inject: [ConfigService],
       useFactory: getDatabaseConfig,
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 100,
-      },
-    ]),
+    ThrottlerModule.forRoot({
+      ttl: 60000,
+      limit: 100,
+    }),
     SharedModule,
     AuthModule,
     UsersModule,

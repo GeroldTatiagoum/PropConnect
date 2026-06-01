@@ -556,16 +556,16 @@ Deploy to Production
 
 ## Technology Decision Rationale
 
-| Component         | Choice         | Rationale                                                                        |
-| ----------------- | -------------- | -------------------------------------------------------------------------------- |
-| Language          | TypeScript     | Type safety, shared types between frontend and backend, fewer runtime errors     |
-| Backend Framework | NestJS         | Spring Boot-inspired: DI, decorators, modules, guards — enterprise patterns without Java verbosity |
-| Frontend          | React          | Large ecosystem, component-based, excellent DevTools                             |
-| Database          | PostgreSQL     | ACID compliance, JSON support, robust                                            |
-| Cache             | Redis          | Fast in-memory store, session management                                         |
-| Storage           | AWS S3         | Scalable, secure, cost-effective                                                 |
-| Auth              | JWT            | Stateless, scalable, standard                                                    |
-| Real-time         | WebSocket      | Native browser support, low latency                                              |
+| Component         | Choice     | Rationale                                                                                          |
+| ----------------- | ---------- | -------------------------------------------------------------------------------------------------- |
+| Language          | TypeScript | Type safety, shared types between frontend and backend, fewer runtime errors                       |
+| Backend Framework | NestJS     | Spring Boot-inspired: DI, decorators, modules, guards — enterprise patterns without Java verbosity |
+| Frontend          | React      | Large ecosystem, component-based, excellent DevTools                                               |
+| Database          | PostgreSQL | ACID compliance, JSON support, robust                                                              |
+| Cache             | Redis      | Fast in-memory store, session management                                                           |
+| Storage           | AWS S3     | Scalable, secure, cost-effective                                                                   |
+| Auth              | JWT        | Stateless, scalable, standard                                                                      |
+| Real-time         | WebSocket  | Native browser support, low latency                                                                |
 
 ### Why NestJS over Java/Spring Boot
 
@@ -574,6 +574,7 @@ This choice was evaluated deliberately. PropConnect's backend workload is almost
 Beyond raw performance, NestJS provides the same enterprise architectural patterns as Spring Boot (dependency injection, module system, guards, interceptors, exception filters, pipes) with far less boilerplate. The biggest additional win is a **unified TypeScript codebase**: DTOs, validation schemas, and domain types defined once in the backend are directly reusable by the frontend, eliminating an entire class of contract drift bugs.
 
 **When Java/Spring Boot would be the right call instead:**
+
 - The core workload shifts to CPU-intensive computation (complex financial modeling, ML inference) that cannot be offloaded
 - The team is primarily Java-experienced with no TypeScript background
 - The platform needs to sustain tens of thousands of concurrent persistent WebSocket connections per node

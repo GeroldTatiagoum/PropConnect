@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('joi' in d.get\\('dependencies',{}\\), '@nestjs/platform-express' in d.get\\('dependencies',{}\\), 'multer' in d.get\\('dependencies',{}\\)\\)\")",
+      "Bash(npm run *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d['version']\\)\")",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(chmod +x /Users/piagetbouaka/Programming/PropConnect/infra/localstack/init-s3.sh)",
+      "Bash(cat ~/.docker/config.json 2>/dev/null || echo \"NOT FOUND\")",
+      "Read(//Users/piagetbouaka/.docker/**)",
+      "Bash(docker --version)",
+      "Read(//Applications/Docker.app/Contents/Resources/**)",
+      "Bash(find /Volumes -name \"docker-credential-desktop\" 2>/dev/null | head -5; find /Volumes -name \"docker\" -type f 2>/dev/null | head -5)",
+      "Read(//Volumes/**)",
+      "Bash(grep -n \"SSD Piaget\" ~/.zshrc 2>/dev/null || echo \"NOT IN ZSHRC\")",
+      "Read(//Users/piagetbouaka/**)",
+      "Bash(echo '\\\\n# Docker Desktop \\(on external SSD\\)\\\\nexport PATH=\"/Volumes/SSD Piaget/AppInstalled/Docker.app/Contents/Resources/bin:$PATH\"' >> ~/.zshrc)"
+    ],
+    "additionalDirectories": [
+      "/Users/piagetbouaka"
+    ]
+  }
+}
