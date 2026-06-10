@@ -71,6 +71,7 @@ PropConnect is a B2C digital platform that bridges the gap between traditional r
 ## 🛠 Technology Stack
 
 ### Frontend
+
 - **React.js** 18+ with TypeScript
 - **Tailwind CSS** for responsive styling
 - **Redux Toolkit** for state management
@@ -78,6 +79,7 @@ PropConnect is a B2C digital platform that bridges the gap between traditional r
 - **Vitest** & **React Testing Library** for testing
 
 ### Backend
+
 - **Node.js** (LTS) with Express.js / NestJS
 - **TypeScript** for type safety
 - **PostgreSQL** for relational data
@@ -86,12 +88,14 @@ PropConnect is a B2C digital platform that bridges the gap between traditional r
 - **AWS S3** for secure document storage
 
 ### DevOps & CI/CD
+
 - **Docker** containerization
 - **Kubernetes** orchestration
 - **GitHub Actions** for automated deployment
 - **AWS** or **GCP** cloud infrastructure
 
 ### Testing & Quality
+
 - **Jest** for unit testing
 - **Cypress** for E2E testing
 - **ESLint** & **Prettier** for code quality
@@ -110,23 +114,27 @@ PropConnect is a B2C digital platform that bridges the gap between traditional r
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/GeroldTatiagoum/PropConnect.git
    cd PropConnect
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Environment setup**
+
    ```bash
    cp .env.example .env.local
    # Edit .env.local with your configuration
    ```
 
 4. **Start development servers**
+
    ```bash
    # Backend
    npm run dev:backend
@@ -200,6 +208,7 @@ PropConnect/
 ## 🛣 Development Roadmap
 
 ### Phase 1: MVP Web App (Months 1–4)
+
 - [x] Project initialization & setup
 - [ ] Backend architecture & database schema
 - [ ] User registration & authentication
@@ -209,6 +218,7 @@ PropConnect/
 - [ ] Certified messaging system
 
 ### Phase 2: Advanced Features (Months 5–8)
+
 - [ ] Market data dashboard & analytics
 - [ ] Property valuation algorithm
 - [ ] Email & push notifications
@@ -216,12 +226,14 @@ PropConnect/
 - [ ] External data source integrations
 
 ### Phase 3: Mobile Apps (Months 9–14)
+
 - [ ] React Native codebase setup
 - [ ] iOS app development & deployment
 - [ ] Android app development & deployment
 - [ ] Mobile-specific features (geolocation, camera)
 
 ### Phase 4: Scale & Monetization (Months 15+)
+
 - [ ] Premium subscription features
 - [ ] Geographic expansion strategy
 - [ ] Broker partner program
@@ -243,12 +255,14 @@ Detailed documentation is available in the `/docs` folder:
 We welcome contributions from team members. Please follow these guidelines:
 
 ### Branch Convention
+
 - Feature: `feature/description`
 - Bugfix: `bugfix/description`
 - Docs: `docs/description`
 - Development: `env/svil`
 
 ### Commit Convention
+
 ```
 <type>: <subject>
 
@@ -260,6 +274,7 @@ We welcome contributions from team members. Please follow these guidelines:
 Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
 
 ### Pull Request Process
+
 1. Create a feature branch from `env/svil`
 2. Make atomic, well-documented commits
 3. Submit PR with clear description

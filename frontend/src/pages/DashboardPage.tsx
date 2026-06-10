@@ -3,6 +3,7 @@ import { UserRole } from '@/types/user.types';
 import SellerDashboard from '@/components/dashboard/SellerDashboard';
 import BuyerDashboard from '@/components/dashboard/BuyerDashboard';
 import BrokerDashboard from '@/components/dashboard/BrokerDashboard';
+import AdminDashboard from '@/components/dashboard/AdminDashboard';
 
 export default function DashboardPage() {
   const { role } = useAuth();
@@ -12,11 +13,7 @@ export default function DashboardPage() {
       {role === UserRole.SELLER && <SellerDashboard />}
       {role === UserRole.BUYER && <BuyerDashboard />}
       {role === UserRole.BROKER && <BrokerDashboard />}
-      {role === UserRole.ADMIN && (
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Admin dashboard</h2>
-        </div>
-      )}
+      {role === UserRole.ADMIN && <AdminDashboard />}
     </main>
   );
 }

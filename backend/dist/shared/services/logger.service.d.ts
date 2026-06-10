@@ -6,6 +6,9 @@ export declare class LoggerService implements NestLoggerService {
     error(message: string, trace?: string, context?: string): void;
     warn(message: string, context?: string): void;
     debug(message: string, context?: string): void;
+    verbose(message: string, context?: string): void;
+    /** Log a timed operation result: method name, duration, optional extra metadata. */
+    timed(context: string, method: string, durationMs: number, meta?: Record<string, unknown>): void;
     security(event: Record<string, unknown>): void;
 }
 //# sourceMappingURL=logger.service.d.ts.map

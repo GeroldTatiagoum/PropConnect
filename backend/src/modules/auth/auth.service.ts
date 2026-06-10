@@ -34,8 +34,11 @@ export class AuthService {
     refreshToken: string;
     expiresIn: number;
   }> {
+    this.logger.debug(`register attempt: email=${dto.email} role=${dto.role ?? UserRole.BUYER}`, 'AuthService');
+
     const existing = await this.userRepo.findOne({ where: { email: dto.email } });
     if (existing) {
+      this.logger.warn(`register rejected: email=${dto.email} reason=already_registered`, 'AuthService');
       throw new ConflictException('Email already registered');
     }
 
@@ -52,7 +55,7 @@ export class AuthService {
     });
 
     await this.userRepo.save(user);
-    this.logger.log(`User registered: ${user.id}`, 'AuthService');
+    this.logger.log(`register success: userId=${user.id} email=${user.email} role=${user.role}`, 'AuthService');
 
     const tokens = await this.generateTokens(user);
     return { user, ...tokens };
@@ -64,10 +67,12 @@ export class AuthService {
     refreshToken: string;
     expiresIn: number;
   }> {
+    this.logger.debug(`login attempt: email=${dto.email} ip=${ip}`, 'AuthService');
+
     const user = await this.userRepo.findOne({ where: { email: dto.email } });
 
     if (!user || !user.isActive) {
-      this.logger.security({ event: 'login_failed', email: dto.email, ip, reason: 'user_not_found' });
+      this.logger.security({ event: 'login_failed', email: dto.email, ip, reason: 'user_not_found_or_inactive' });
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -80,7 +85,8 @@ export class AuthService {
     user.lastLoginAt = new Date();
     await this.userRepo.save(user);
 
-    this.logger.security({ event: 'login_success', userId: user.id, ip });
+    this.logger.security({ event: 'login_success', userId: user.id, role: user.role, ip });
+    this.logger.log(`login success: userId=${user.id} role=${user.role}`, 'AuthService');
 
     const tokens = await this.generateTokens(user);
     return { user, ...tokens };
@@ -96,27 +102,34 @@ export class AuthService {
       payload = this.jwtService.verify<{ sub: string }>(refreshToken, {
         secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
       });
-    } catch {
+    } catch (err) {
+      this.logger.warn(`token refresh failed: reason=invalid_jwt err=${(err as Error).message}`, 'AuthService');
       throw new UnauthorizedException('Invalid refresh token');
     }
 
     const stored = await this.redis.get(`${REFRESH_TOKEN_PREFIX}${payload.sub}`);
     if (!stored || stored !== refreshToken) {
+      this.logger.security({ event: 'refresh_token_reuse', userId: payload.sub, reason: 'token_not_in_store' });
       throw new UnauthorizedException('Refresh token revoked or expired');
     }
 
     const user = await this.userRepo.findOne({ where: { id: payload.sub, isActive: true } });
-    if (!user) throw new UnauthorizedException('User not found');
+    if (!user) {
+      this.logger.warn(`token refresh failed: userId=${payload.sub} reason=user_not_found`, 'AuthService');
+      throw new UnauthorizedException('User not found');
+    }
 
     const accessToken = this.signAccessToken(user);
     const expiresIn = 900;
 
+    this.logger.debug(`token refreshed: userId=${user.id}`, 'AuthService');
     return { accessToken, expiresIn, tokenType: 'Bearer' };
   }
 
   async logout(userId: string): Promise<void> {
     await this.redis.del(`${REFRESH_TOKEN_PREFIX}${userId}`);
-    this.logger.log(`User logged out: ${userId}`, 'AuthService');
+    this.logger.log(`logout: userId=${userId}`, 'AuthService');
+    this.logger.security({ event: 'logout', userId });
   }
 
   private async generateTokens(user: User): Promise<{

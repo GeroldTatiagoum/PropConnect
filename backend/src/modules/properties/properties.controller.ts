@@ -21,6 +21,7 @@ import {
 import { PropertiesService } from './properties.service';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { PropertyFilterDto } from './dto/property-filter.dto';
+import { PropertyStatus } from './entities/property.entity';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../shared/guards/roles.guard';
 import { CurrentUser } from '../../shared/decorators/current-user.decorator';
@@ -50,6 +51,41 @@ export class PropertiesController {
     return this.propertiesService.findAll(filters);
   }
 
+  @Get('my')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT')
+  @ApiOperation({ summary: "Get the authenticated seller's own listings" })
+  @ApiResponse({ status: 200, description: "Seller's paginated property list" })
+  findMine(
+    @CurrentUser() user: User,
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+  ) {
+    return this.propertiesService.findBySeller(user.id, +page, +limit);
+  }
+
+  @Get('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth('JWT')
+  @ApiOperation({ summary: 'List all properties regardless of status (admin only)' })
+  findAllAdmin(
+    @Query('status') status?: PropertyStatus,
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+  ) {
+    return this.propertiesService.findAllAdmin(status, +page, +limit);
+  }
+
+  @Get('stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth('JWT')
+  @ApiOperation({ summary: 'Get property counts by status (admin only)' })
+  getPropertyStats() {
+    return this.propertiesService.getPropertyStats();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get property details by ID' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
@@ -59,6 +95,20 @@ export class PropertiesController {
     const property = await this.propertiesService.findById(id);
     await this.propertiesService.incrementViewCount(id);
     return property;
+  }
+
+  @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.BROKER, UserRole.ADMIN)
+  @ApiBearerAuth('JWT')
+  @ApiOperation({ summary: 'Change property status (broker/admin only)' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  changeStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: User,
+    @Body('status') status: PropertyStatus,
+  ) {
+    return this.propertiesService.changeStatus(id, status, user.role);
   }
 
   @Patch(':id')

@@ -18,14 +18,14 @@ export default function Navigation() {
         Properties
       </NavLink>
 
-      {(role === UserRole.SELLER || role === UserRole.ADMIN) && (
+      {(role === UserRole.SELLER || role === UserRole.ADMIN || role === UserRole.BROKER) && (
         <NavLink
           to="/dashboard"
           className={({ isActive }) =>
             isActive ? 'text-primary-600' : 'text-gray-600 hover:text-gray-900'
           }
         >
-          Dashboard
+          {role === UserRole.ADMIN ? 'Admin' : 'Dashboard'}
         </NavLink>
       )}
 

@@ -18,6 +18,7 @@ const swagger_1 = require("@nestjs/swagger");
 const properties_service_1 = require("./properties.service");
 const create_property_dto_1 = require("./dto/create-property.dto");
 const property_filter_dto_1 = require("./dto/property-filter.dto");
+const property_entity_1 = require("./entities/property.entity");
 const jwt_auth_guard_1 = require("../../shared/guards/jwt-auth.guard");
 const roles_guard_1 = require("../../shared/guards/roles.guard");
 const current_user_decorator_1 = require("../../shared/decorators/current-user.decorator");
@@ -33,10 +34,22 @@ let PropertiesController = class PropertiesController {
     findAll(filters) {
         return this.propertiesService.findAll(filters);
     }
+    findMine(user, page = 1, limit = 20) {
+        return this.propertiesService.findBySeller(user.id, +page, +limit);
+    }
+    findAllAdmin(status, page = 1, limit = 20) {
+        return this.propertiesService.findAllAdmin(status, +page, +limit);
+    }
+    getPropertyStats() {
+        return this.propertiesService.getPropertyStats();
+    }
     async findOne(id) {
         const property = await this.propertiesService.findById(id);
         await this.propertiesService.incrementViewCount(id);
         return property;
+    }
+    changeStatus(id, user, status) {
+        return this.propertiesService.changeStatus(id, status, user.role);
     }
     update(id, user, dto) {
         return this.propertiesService.update(id, user.id, dto);
@@ -67,6 +80,42 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], PropertiesController.prototype, "findAll", null);
 __decorate([
+    (0, common_1.Get)('my'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)('JWT'),
+    (0, swagger_1.ApiOperation)({ summary: "Get the authenticated seller's own listings" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Seller's paginated property list" }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [user_entity_1.User, Object, Object]),
+    __metadata("design:returntype", void 0)
+], PropertiesController.prototype, "findMine", null);
+__decorate([
+    (0, common_1.Get)('admin'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),
+    (0, swagger_1.ApiBearerAuth)('JWT'),
+    (0, swagger_1.ApiOperation)({ summary: 'List all properties regardless of status (admin only)' }),
+    __param(0, (0, common_1.Query)('status')),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], PropertiesController.prototype, "findAllAdmin", null);
+__decorate([
+    (0, common_1.Get)('stats'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),
+    (0, swagger_1.ApiBearerAuth)('JWT'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get property counts by status (admin only)' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], PropertiesController.prototype, "getPropertyStats", null);
+__decorate([
     (0, common_1.Get)(':id'),
     (0, swagger_1.ApiOperation)({ summary: 'Get property details by ID' }),
     (0, swagger_1.ApiParam)({ name: 'id', type: 'string', format: 'uuid' }),
@@ -77,6 +126,20 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], PropertiesController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Patch)(':id/status'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.BROKER, user_entity_1.UserRole.ADMIN),
+    (0, swagger_1.ApiBearerAuth)('JWT'),
+    (0, swagger_1.ApiOperation)({ summary: 'Change property status (broker/admin only)' }),
+    (0, swagger_1.ApiParam)({ name: 'id', type: 'string', format: 'uuid' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Body)('status')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, user_entity_1.User, String]),
+    __metadata("design:returntype", void 0)
+], PropertiesController.prototype, "changeStatus", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

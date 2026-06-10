@@ -7,6 +7,8 @@ import RegisterPage from '@/pages/RegisterPage';
 import DashboardPage from '@/pages/DashboardPage';
 import PropertiesPage from '@/pages/PropertiesPage';
 import PropertyDetailPage from '@/pages/PropertyDetailPage';
+import ProfilePage from '@/pages/ProfilePage';
+import PropertyCreatePage from '@/pages/PropertyCreatePage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 export default function App() {
@@ -19,12 +21,28 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/properties" element={<PropertiesPage />} />
+          <Route
+            path="/properties/new"
+            element={
+              <ProtectedRoute>
+                <PropertyCreatePage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/properties/:id" element={<PropertyDetailPage />} />
           <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
               </ProtectedRoute>
             }
           />

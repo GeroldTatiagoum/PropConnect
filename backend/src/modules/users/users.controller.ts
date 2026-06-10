@@ -3,11 +3,13 @@ import {
   Get,
   Patch,
   Post,
+  Param,
   Body,
   UseGuards,
   UseInterceptors,
   UploadedFile,
   ParseEnumPipe,
+  ParseUUIDPipe,
   Query,
   HttpCode,
   HttpStatus,
@@ -20,12 +22,16 @@ import {
   ApiBearerAuth,
   ApiConsumes,
   ApiBody,
+  ApiParam,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
+import { RolesGuard } from '../../shared/guards/roles.guard';
+import { Roles } from '../../shared/decorators/roles.decorator';
 import { CurrentUser } from '../../shared/decorators/current-user.decorator';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 import { DocumentType, DocumentSide } from '../../database/entities/document.entity';
 
 @ApiTags('Users')
@@ -34,6 +40,39 @@ import { DocumentType, DocumentSide } from '../../database/entities/document.ent
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get()
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'List all users (admin only)' })
+  @ApiResponse({ status: 200, description: 'Paginated user list' })
+  findAll(
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+    @Query('role') role?: UserRole,
+  ) {
+    return this.usersService.findAll({ role }, +page, +limit);
+  }
+
+  @Get('stats')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get user statistics (admin only)' })
+  getUserStats() {
+    return this.usersService.getUserStats();
+  }
+
+  @Patch(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Admin update user (role, isActive, kycStatus)' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  adminUpdate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AdminUpdateUserDto,
+  ) {
+    return this.usersService.adminUpdate(id, dto);
+  }
 
   @Get('me')
   @ApiOperation({ summary: 'Get authenticated user profile' })

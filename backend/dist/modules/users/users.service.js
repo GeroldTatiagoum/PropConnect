@@ -65,15 +65,63 @@ let UsersService = class UsersService {
         this.s3 = new AWS.S3({ region: config.get('AWS_REGION') });
     }
     async findById(id) {
+        this.logger.debug(`findById: userId=${id}`, 'UsersService');
         const user = await this.userRepo.findOne({ where: { id } });
-        if (!user)
+        if (!user) {
+            this.logger.warn(`findById not found: userId=${id}`, 'UsersService');
             throw new common_1.NotFoundException('User not found');
+        }
         return user;
     }
+    async findAll(filters, page = 1, limit = 20) {
+        this.logger.debug(`findAll: role=${filters.role ?? 'all'} page=${page} limit=${limit}`, 'UsersService');
+        const qb = this.userRepo.createQueryBuilder('u').where('1=1');
+        if (filters.role)
+            qb.andWhere('u.role = :role', { role: filters.role });
+        qb.orderBy('u.created_at', 'DESC');
+        const total = await qb.getCount();
+        const data = await qb.skip((page - 1) * limit).take(limit).getMany();
+        this.logger.debug(`findAll result: total=${total} returned=${data.length}`, 'UsersService');
+        const pages = Math.ceil(total / limit);
+        return { data, pagination: { total, page, limit, pages, hasNext: page < pages, hasPrev: page > 1 } };
+    }
+    async getUserStats() {
+        const total = await this.userRepo.count();
+        const active = await this.userRepo.count({ where: { isActive: true } });
+        const byRoleRaw = await this.userRepo
+            .createQueryBuilder('u')
+            .select('u.role', 'role')
+            .addSelect('COUNT(*)', 'count')
+            .groupBy('u.role')
+            .getRawMany();
+        const byKycRaw = await this.userRepo
+            .createQueryBuilder('u')
+            .select('u.kyc_status', 'kycStatus')
+            .addSelect('COUNT(*)', 'count')
+            .groupBy('u.kyc_status')
+            .getRawMany();
+        return {
+            total,
+            active,
+            byRole: Object.fromEntries(byRoleRaw.map((r) => [r.role, Number(r.count)])),
+            byKyc: Object.fromEntries(byKycRaw.map((r) => [r.kycStatus, Number(r.count)])),
+        };
+    }
+    async adminUpdate(id, dto) {
+        this.logger.debug(`adminUpdate: userId=${id} fields=${Object.keys(dto).join(',')}`, 'UsersService');
+        const user = await this.findById(id);
+        Object.assign(user, dto);
+        const saved = await this.userRepo.save(user);
+        this.logger.log(`adminUpdate success: userId=${id} role=${saved.role} isActive=${saved.isActive} kycStatus=${saved.kycStatus}`, 'UsersService');
+        return saved;
+    }
     async update(userId, dto) {
+        this.logger.debug(`update: userId=${userId} fields=${Object.keys(dto).join(',')}`, 'UsersService');
         const user = await this.findById(userId);
         Object.assign(user, dto);
-        return this.userRepo.save(user);
+        const saved = await this.userRepo.save(user);
+        this.logger.log(`update success: userId=${userId}`, 'UsersService');
+        return saved;
     }
     async getKycStatus(userId) {
         const user = await this.findById(userId);
@@ -93,14 +141,18 @@ let UsersService = class UsersService {
         };
     }
     async uploadKycDocument(userId, file, documentType, side) {
+        this.logger.debug(`uploadKycDocument: userId=${userId} type=${documentType} side=${side} mime=${file.mimetype} size=${file.size}`, 'UsersService');
         if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+            this.logger.warn(`uploadKycDocument rejected: userId=${userId} reason=invalid_mime mime=${file.mimetype}`, 'UsersService');
             throw new common_1.BadRequestException('File type not allowed. Use PDF, JPG or PNG.');
         }
         if (file.size > MAX_FILE_SIZE) {
+            this.logger.warn(`uploadKycDocument rejected: userId=${userId} reason=file_too_large size=${file.size}`, 'UsersService');
             throw new common_1.BadRequestException('File exceeds 10MB limit');
         }
         const bucket = this.config.getOrThrow('AWS_S3_BUCKET');
         const s3Key = `kyc/${userId}/${documentType}_${side}_${Date.now()}`;
+        this.logger.debug(`uploadKycDocument: uploading to S3 bucket=${bucket} key=${s3Key}`, 'UsersService');
         await this.s3
             .putObject({
             Bucket: bucket,
@@ -121,7 +173,7 @@ let UsersService = class UsersService {
             fileMimeType: file.mimetype,
         });
         const saved = await this.documentRepo.save(document);
-        this.logger.log(`KYC document uploaded: ${saved.id} for user ${userId}`, 'UsersService');
+        this.logger.log(`uploadKycDocument success: documentId=${saved.id} userId=${userId} type=${documentType} side=${side}`, 'UsersService');
         return saved;
     }
     async getPresignedDownloadUrl(s3Key) {

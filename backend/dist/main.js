@@ -11,6 +11,7 @@ const compression_1 = __importDefault(require("compression"));
 const app_module_1 = require("./app.module");
 const http_exception_filter_1 = require("./shared/filters/http-exception.filter");
 const logger_service_1 = require("./shared/services/logger.service");
+const logging_interceptor_1 = require("./shared/interceptors/logging.interceptor");
 async function bootstrap() {
     const logger = new logger_service_1.LoggerService();
     const app = await core_1.NestFactory.create(app_module_1.AppModule, { logger });
@@ -43,6 +44,8 @@ async function bootstrap() {
     }));
     // Global exception filter
     app.useGlobalFilters(new http_exception_filter_1.HttpExceptionFilter());
+    // Global HTTP logging interceptor
+    app.useGlobalInterceptors(new logging_interceptor_1.LoggingInterceptor(logger));
     // API prefix
     app.setGlobalPrefix('api');
     // Swagger — disabled in production via env

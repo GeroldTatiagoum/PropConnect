@@ -1,10 +1,22 @@
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
+import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
+import { User, UserRole } from './entities/user.entity';
 import { DocumentType, DocumentSide } from '../../database/entities/document.entity';
 export declare class UsersController {
     private readonly usersService;
     constructor(usersService: UsersService);
+    findAll(page?: number, limit?: number, role?: UserRole): Promise<{
+        data: User[];
+        pagination: Record<string, number | boolean>;
+    }>;
+    getUserStats(): Promise<{
+        total: number;
+        active: number;
+        byRole: Record<string, number>;
+        byKyc: Record<string, number>;
+    }>;
+    adminUpdate(id: string, dto: AdminUpdateUserDto): Promise<User>;
     getMe(user: User): User;
     updateMe(user: User, dto: UpdateUserDto): Promise<User>;
     getKycStatus(user: User): Promise<{

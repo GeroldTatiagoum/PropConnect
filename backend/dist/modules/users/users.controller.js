@@ -18,13 +18,25 @@ const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const users_service_1 = require("./users.service");
 const update_user_dto_1 = require("./dto/update-user.dto");
+const admin_update_user_dto_1 = require("./dto/admin-update-user.dto");
 const jwt_auth_guard_1 = require("../../shared/guards/jwt-auth.guard");
+const roles_guard_1 = require("../../shared/guards/roles.guard");
+const roles_decorator_1 = require("../../shared/decorators/roles.decorator");
 const current_user_decorator_1 = require("../../shared/decorators/current-user.decorator");
 const user_entity_1 = require("./entities/user.entity");
 const document_entity_1 = require("../../database/entities/document.entity");
 let UsersController = class UsersController {
     constructor(usersService) {
         this.usersService = usersService;
+    }
+    findAll(page = 1, limit = 20, role) {
+        return this.usersService.findAll({ role }, +page, +limit);
+    }
+    getUserStats() {
+        return this.usersService.getUserStats();
+    }
+    adminUpdate(id, dto) {
+        return this.usersService.adminUpdate(id, dto);
     }
     getMe(user) {
         return user;
@@ -40,6 +52,40 @@ let UsersController = class UsersController {
     }
 };
 exports.UsersController = UsersController;
+__decorate([
+    (0, common_1.Get)(),
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'List all users (admin only)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Paginated user list' }),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('role')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, String]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('stats'),
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'Get user statistics (admin only)' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "getUserStats", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_entity_1.UserRole.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'Admin update user (role, isActive, kycStatus)' }),
+    (0, swagger_1.ApiParam)({ name: 'id', type: 'string', format: 'uuid' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, admin_update_user_dto_1.AdminUpdateUserDto]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "adminUpdate", null);
 __decorate([
     (0, common_1.Get)('me'),
     (0, swagger_1.ApiOperation)({ summary: 'Get authenticated user profile' }),

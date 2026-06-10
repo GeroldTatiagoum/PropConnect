@@ -6,6 +6,7 @@ import compression from 'compression';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 import { LoggerService } from './shared/services/logger.service';
+import { LoggingInterceptor } from './shared/interceptors/logging.interceptor';
 
 async function bootstrap(): Promise<void> {
   const logger = new LoggerService();
@@ -49,6 +50,9 @@ async function bootstrap(): Promise<void> {
 
   // Global exception filter
   app.useGlobalFilters(new HttpExceptionFilter());
+
+  // Global HTTP logging interceptor
+  app.useGlobalInterceptors(new LoggingInterceptor(logger));
 
   // API prefix
   app.setGlobalPrefix('api');

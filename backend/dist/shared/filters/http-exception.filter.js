@@ -40,6 +40,9 @@ let HttpExceptionFilter = class HttpExceptionFilter {
         if (status >= 500) {
             this.logger.error(`${request.method} ${request.url} → ${status}: ${message}`, exception instanceof Error ? exception.stack : undefined, 'HttpExceptionFilter');
         }
+        else if (status >= 400) {
+            this.logger.warn(`${request.method} ${request.url} → ${status} (${code}): ${message}`, 'HttpExceptionFilter');
+        }
         response.status(status).json({
             error: {
                 code,

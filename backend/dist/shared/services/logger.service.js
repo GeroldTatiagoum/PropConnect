@@ -45,13 +45,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.LoggerService = void 0;
 const common_1 = require("@nestjs/common");
 const winston = __importStar(require("winston"));
+const IS_PROD = process.env.NODE_ENV === 'production';
+const devFormat = winston.format.combine(winston.format.colorize({ all: true }), winston.format.printf(({ timestamp, level, message, context, stack, durationMs, ...meta }) => {
+    const ctx = context ? `[${context}]` : '[App]';
+    const dur = durationMs !== undefined ? ` +${durationMs}ms` : '';
+    const extra = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
+    const stackStr = stack ? `\n${stack}` : '';
+    return `${timestamp} ${ctx} ${level}: ${message}${dur}${extra}${stackStr}`;
+}));
+const prodFormat = winston.format.combine(winston.format.json());
 let LoggerService = class LoggerService {
     constructor() {
         this.logger = winston.createLogger({
-            level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-            format: winston.format.combine(winston.format.timestamp(), winston.format.errors({ stack: true }), process.env.NODE_ENV === 'production'
-                ? winston.format.json()
-                : winston.format.combine(winston.format.colorize(), winston.format.printf(({ timestamp, level, message, context, stack }) => `${timestamp} [${context ?? 'App'}] ${level}: ${message}${stack ? `\n${stack}` : ''}`))),
+            level: IS_PROD ? 'info' : 'debug',
+            format: winston.format.combine(winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }), winston.format.errors({ stack: true }), IS_PROD ? prodFormat : devFormat),
             transports: [new winston.transports.Console()],
         });
     }
@@ -67,8 +74,15 @@ let LoggerService = class LoggerService {
     debug(message, context) {
         this.logger.debug(message, { context });
     }
+    verbose(message, context) {
+        this.logger.verbose(message, { context });
+    }
+    /** Log a timed operation result: method name, duration, optional extra metadata. */
+    timed(context, method, durationMs, meta) {
+        this.logger.debug(`${method} completed`, { context, durationMs, ...meta });
+    }
     security(event) {
-        this.logger.info('[SECURITY]', { ...event, type: 'security_event' });
+        this.logger.warn('[SECURITY]', { ...event, type: 'security_event' });
     }
 };
 exports.LoggerService = LoggerService;

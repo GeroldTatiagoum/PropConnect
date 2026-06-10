@@ -66,8 +66,10 @@ let AuthService = class AuthService {
         this.logger = logger;
     }
     async register(dto) {
+        this.logger.debug(`register attempt: email=${dto.email} role=${dto.role ?? user_entity_1.UserRole.BUYER}`, 'AuthService');
         const existing = await this.userRepo.findOne({ where: { email: dto.email } });
         if (existing) {
+            this.logger.warn(`register rejected: email=${dto.email} reason=already_registered`, 'AuthService');
             throw new common_1.ConflictException('Email already registered');
         }
         const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
@@ -81,14 +83,15 @@ let AuthService = class AuthService {
             kycStatus: user_entity_1.KycStatus.PENDING,
         });
         await this.userRepo.save(user);
-        this.logger.log(`User registered: ${user.id}`, 'AuthService');
+        this.logger.log(`register success: userId=${user.id} email=${user.email} role=${user.role}`, 'AuthService');
         const tokens = await this.generateTokens(user);
         return { user, ...tokens };
     }
     async login(dto, ip) {
+        this.logger.debug(`login attempt: email=${dto.email} ip=${ip}`, 'AuthService');
         const user = await this.userRepo.findOne({ where: { email: dto.email } });
         if (!user || !user.isActive) {
-            this.logger.security({ event: 'login_failed', email: dto.email, ip, reason: 'user_not_found' });
+            this.logger.security({ event: 'login_failed', email: dto.email, ip, reason: 'user_not_found_or_inactive' });
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
         const valid = await bcrypt.compare(dto.password, user.passwordHash);
@@ -98,7 +101,8 @@ let AuthService = class AuthService {
         }
         user.lastLoginAt = new Date();
         await this.userRepo.save(user);
-        this.logger.security({ event: 'login_success', userId: user.id, ip });
+        this.logger.security({ event: 'login_success', userId: user.id, role: user.role, ip });
+        this.logger.log(`login success: userId=${user.id} role=${user.role}`, 'AuthService');
         const tokens = await this.generateTokens(user);
         return { user, ...tokens };
     }
@@ -109,23 +113,29 @@ let AuthService = class AuthService {
                 secret: this.config.getOrThrow('JWT_REFRESH_SECRET'),
             });
         }
-        catch {
+        catch (err) {
+            this.logger.warn(`token refresh failed: reason=invalid_jwt err=${err.message}`, 'AuthService');
             throw new common_1.UnauthorizedException('Invalid refresh token');
         }
         const stored = await this.redis.get(`${REFRESH_TOKEN_PREFIX}${payload.sub}`);
         if (!stored || stored !== refreshToken) {
+            this.logger.security({ event: 'refresh_token_reuse', userId: payload.sub, reason: 'token_not_in_store' });
             throw new common_1.UnauthorizedException('Refresh token revoked or expired');
         }
         const user = await this.userRepo.findOne({ where: { id: payload.sub, isActive: true } });
-        if (!user)
+        if (!user) {
+            this.logger.warn(`token refresh failed: userId=${payload.sub} reason=user_not_found`, 'AuthService');
             throw new common_1.UnauthorizedException('User not found');
+        }
         const accessToken = this.signAccessToken(user);
         const expiresIn = 900;
+        this.logger.debug(`token refreshed: userId=${user.id}`, 'AuthService');
         return { accessToken, expiresIn, tokenType: 'Bearer' };
     }
     async logout(userId) {
         await this.redis.del(`${REFRESH_TOKEN_PREFIX}${userId}`);
-        this.logger.log(`User logged out: ${userId}`, 'AuthService');
+        this.logger.log(`logout: userId=${userId}`, 'AuthService');
+        this.logger.security({ event: 'logout', userId });
     }
     async generateTokens(user) {
         const accessToken = this.signAccessToken(user);

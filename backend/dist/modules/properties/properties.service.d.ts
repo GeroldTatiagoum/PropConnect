@@ -16,8 +16,17 @@ export declare class PropertiesService {
         data: Property[];
         pagination: Record<string, number | boolean>;
     }>;
+    findBySeller(sellerId: string, page?: number, limit?: number): Promise<{
+        data: Property[];
+        pagination: Record<string, number | boolean>;
+    }>;
     update(id: string, sellerId: string, patch: Partial<CreatePropertyDto>): Promise<Property>;
     incrementViewCount(id: string): Promise<void>;
+    findAllAdmin(statusFilter: PropertyStatus | undefined, page?: number, limit?: number): Promise<{
+        data: Property[];
+        pagination: Record<string, number | boolean>;
+    }>;
+    getPropertyStats(): Promise<Record<string, number>>;
     changeStatus(id: string, status: PropertyStatus, actorRole: UserRole): Promise<Property>;
     private parseSortParam;
 }
